@@ -216,9 +216,14 @@ can_train = (
 )
 
 if can_train:
-    # Compute BERT embeddings
-    X_emb = np.vstack(df_train['Combined_Text'].apply(get_bert_embedding).values)
-    y_lab = df_train['Weak_Label'].values
+    # Reset index so positional alignment between X and y is guaranteed
+    df_train = df_train.reset_index(drop=True)
+
+    # Compute BERT embeddings — vstack needs a clean list
+    X_emb = np.vstack(df_train['Combined_Text'].apply(get_bert_embedding).tolist())
+
+    # Force plain numpy str array — PyArrow-backed Series breaks sklearn CV indexing
+    y_lab = np.array(df_train['Weak_Label'].tolist(), dtype=str)
 
     # ── Cross-validated OOF accuracy (honest estimate) ──
     # This evaluates each fold on data the model has NEVER seen during training.
